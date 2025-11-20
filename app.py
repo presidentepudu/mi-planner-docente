@@ -1,354 +1,332 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
 import json
 
 # ==========================================
-# 1. CONFIGURACIÓN Y ESTILOS (TEMAS)
+# 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
-st.set_page_config(page_title="Planner Docente Pro", layout="wide", page_icon="🎓")
+st.set_page_config(page_title="Planner Docente V4", layout="wide", page_icon="🎓")
 
-# Inicializar estado de navegación si no existe
-if 'pagina_actual' not in st.session_state:
-    st.session_state.pagina_actual = "Inicio"
-
-# --- GESTIÓN DE TEMAS (CSS) ---
+# Función para aplicar estilos
 def aplicar_estilos():
-    tema = st.session_state.get('tema', 'Claro')
+    tema = st.session_state.get('tema', 'Hacker (Matrix)') # Por defecto Hacker
     
-    css = ""
-    if tema == 'Oscuro':
-        css = """
-        <style>
-        .stApp { background-color: #0E1117; color: white; }
-        div[data-testid="stMarkdownContainer"] { color: white; }
-        </style>
-        """
-    elif tema == 'Pastel':
-        css = """
-        <style>
-        .stApp { background-color: #fdf6e3; color: #586e75; }
-        .stButton>button { background-color: #ffd1dc; color: black; border-radius: 20px; border: none;}
-        div[data-testid="stExpander"] { background-color: #e6e6fa; border-radius: 10px; }
-        </style>
-        """
-    elif tema == 'Hacker (Matrix)':
-        css = """
+    if tema == 'Hacker (Matrix)':
+        st.markdown("""
         <style>
         .stApp { background-color: #000000; color: #00ff41; font-family: 'Courier New', monospace; }
         div[data-testid="stMarkdownContainer"] p { color: #00ff41 !important; }
         h1, h2, h3 { color: #00ff41 !important; }
         .stButton>button { background-color: #0d0208; color: #00ff41; border: 1px solid #00ff41; }
-        input, textarea { background-color: #111; color: #00ff41; }
+        input, textarea, select { background-color: #111 !important; color: #00ff41 !important; }
+        div[data-testid="stExpander"] { background-color: #0a0a0a; border: 1px solid #00ff41; }
         </style>
-        """
-    st.markdown(css, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    elif tema == 'Claro':
+        # Estilos por defecto de Streamlit
+        pass
 
 # ==========================================
-# 2. INICIALIZACIÓN DE DATOS (MEMORIA)
+# 2. INICIALIZACIÓN DE DATOS
 # ==========================================
 if 'datos_cursos' not in st.session_state:
-    # Estructura inicial vacía para cursos
+    # Estructura inicial con TUS cursos reales
     st.session_state.datos_cursos = {
-        "1° Medio A": pd.DataFrame(columns=["Nombre", "Nota 1", "Nota 2", "Nota 3"]),
-        "2° Medio B": pd.DataFrame(columns=["Nombre", "Nota 1", "Nota 2", "Nota 3"]),
-        "3° Medio Electivo": pd.DataFrame(columns=["Nombre", "Nota 1", "Nota 2", "Nota 3"])
+        "7mo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
+        "8vo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
+        "Computación": pd.DataFrame(columns=["Nombre", "Nota 1"]),
+        "Electivo Programación": pd.DataFrame(columns=["Nombre", "Nota 1"])
     }
 
+# Estructura separada para Décimas (Nombre Estudiante -> Cantidad)
+if 'decimas' not in st.session_state:
+    st.session_state.decimas = {} 
+
 if 'planificacion' not in st.session_state:
-    # Lista de eventos: {'dia': 'Lunes', 'titulo': '...', 'tipo': 'Clase'}
     st.session_state.planificacion = []
 
 if 'tesis_papers' not in st.session_state:
-    # Lista de papers: {'titulo': '...', 'resumen': '...', 'leido': False}
     st.session_state.tesis_papers = []
 
 if 'tema' not in st.session_state:
-    st.session_state.tema = 'Claro'
+    st.session_state.tema = 'Hacker (Matrix)'
 
-# Aplicar el tema seleccionado
+if 'pagina_actual' not in st.session_state:
+    st.session_state.pagina_actual = "Inicio"
+
 aplicar_estilos()
 
 # ==========================================
-# 3. BARRA LATERAL (NAVEGACIÓN)
+# 3. BARRA LATERAL
 # ==========================================
 with st.sidebar:
-    st.title("Panel de Control")
+    st.title("💻 Sistema Docente")
+    st.caption(f"Modo: {st.session_state.tema}")
     
-    # Menú de navegación manual
     seleccion = st.radio(
-        "Ir a:", 
-        ["Inicio", "Mis Cursos", "Planificación", "Tesis", "Configuración"],
-        index=["Inicio", "Mis Cursos", "Planificación", "Tesis", "Configuración"].index(st.session_state.pagina_actual)
+        "Menú:", 
+        ["Inicio", "Mis Cursos", "Gestor de Décimas", "Planificación", "Tesis", "Configuración"],
+        index=["Inicio", "Mis Cursos", "Gestor de Décimas", "Planificación", "Tesis", "Configuración"].index(st.session_state.pagina_actual)
     )
     
-    # Actualizar la página si se cambia en el sidebar
     if seleccion != st.session_state.pagina_actual:
         st.session_state.pagina_actual = seleccion
         st.rerun()
 
 # ==========================================
-# 4. LÓGICA DE LAS PÁGINAS
+# 4. LÓGICA PRINCIPAL
 # ==========================================
 
-# --- PÁGINA: INICIO ---
+# --- INICIO ---
 if st.session_state.pagina_actual == "Inicio":
-    st.title(f"👋 Bienvenido, Profesor")
-    st.markdown("### Tu centro de comando personal para la docencia y la investigación.")
-    st.write("Este programa está diseñado para funcionar rápido, sin internet y adaptarse a tu flujo de trabajo.")
-    
-    st.write("---")
-    
-    # Botones de acceso rápido con colores
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.info("🎓 **Docencia**")
-        st.write("Gestiona listas de cursos y notas.")
-        if st.button("Ir a Mis Cursos", use_container_width=True):
-            st.session_state.pagina_actual = "Mis Cursos"
-            st.rerun()
-            
-    with col2:
-        st.warning("📅 **Organización**")
-        st.write("Tu semana laboral lunes a viernes.")
-        if st.button("Ir a Planificación", use_container_width=True):
-            st.session_state.pagina_actual = "Planificación"
-            st.rerun()
-            
-    with col3:
-        st.success("📚 **Investigación**")
-        st.write("Resúmenes de papers y tareas.")
-        if st.button("Ir a Tesis", use_container_width=True):
-            st.session_state.pagina_actual = "Tesis"
-            st.rerun()
+    st.title("Bienvenido, Profesor Cristobal")
+    st.success("Sistema cargado correctamente.")
+    st.info("💡 Novedad: Ahora puedes subir archivos CSV y agregar columnas de notas dinámicamente.")
 
-# --- PÁGINA: MIS CURSOS ---
+# --- MIS CURSOS ---
 elif st.session_state.pagina_actual == "Mis Cursos":
-    st.title("🎓 Mis Cursos y Notas")
+    st.title("📂 Gestión de Cursos")
     
-    # Selector de Curso
-    curso_actual = st.selectbox("Selecciona el curso:", list(st.session_state.datos_cursos.keys()))
+    # --- SELECTOR Y GESTIÓN DE CURSOS ---
+    col_sel, col_act = st.columns([2, 1])
     
-    # Botón para agregar nuevo curso (opcional)
-    with st.expander("➕ Agregar nuevo curso"):
-        nuevo_curso = st.text_input("Nombre del nuevo curso")
-        if st.button("Crear Curso") and nuevo_curso:
-            if nuevo_curso not in st.session_state.datos_cursos:
-                st.session_state.datos_cursos[nuevo_curso] = pd.DataFrame(columns=["Nombre", "Nota 1", "Nota 2", "Nota 3"])
-                st.success(f"Curso {nuevo_curso} creado!")
-                st.rerun()
+    with col_sel:
+        lista_cursos = list(st.session_state.datos_cursos.keys())
+        if not lista_cursos:
+            st.warning("No tienes cursos. Crea uno nuevo.")
+            curso_actual = None
+        else:
+            curso_actual = st.selectbox("Selecciona Curso:", lista_cursos)
 
-    st.markdown(f"### Planilla de: {curso_actual}")
-    st.caption("Las notas bajo 4.0 se marcarán en rojo. El promedio se calcula solo (si quieres).")
+    with col_act:
+        # Botón para borrar curso actual
+        if curso_actual and st.button("🗑️ Eliminar Curso Actual"):
+            del st.session_state.datos_cursos[curso_actual]
+            st.rerun()
     
-    # Obtener dataframe del curso seleccionado
-    df_curso = st.session_state.datos_cursos[curso_actual]
-    
-    # Asegurar tipos de datos
-    column_config = {
-        "Nombre": st.column_config.TextColumn("Estudiante", width="medium", required=True),
-        "Nota 1": st.column_config.NumberColumn("N1", min_value=1.0, max_value=7.0, step=0.1, format="%.1f"),
-        "Nota 2": st.column_config.NumberColumn("N2", min_value=1.0, max_value=7.0, step=0.1, format="%.1f"),
-        "Nota 3": st.column_config.NumberColumn("N3", min_value=1.0, max_value=7.0, step=0.1, format="%.1f"),
-    }
+    # --- CREAR NUEVO CURSO ---
+    with st.expander("➕ Crear Nuevo Curso"):
+        nombre_nuevo = st.text_input("Nombre del curso:")
+        if st.button("Crear") and nombre_nuevo:
+            st.session_state.datos_cursos[nombre_nuevo] = pd.DataFrame(columns=["Nombre", "Nota 1"])
+            st.rerun()
 
-    # Editor de Datos
-    df_editado = st.data_editor(
-        df_curso,
-        num_rows="dynamic",
-        column_config=column_config,
-        use_container_width=True,
-        key=f"editor_{curso_actual}"
-    )
-    
-    # Guardar cambios en memoria
-    st.session_state.datos_cursos[curso_actual] = df_editado
-    
-    # Mostrar promedios (Visualización simple)
-    if not df_editado.empty:
-        st.write("---")
-        st.subheader("Vista Previa de Promedios")
-        
-        # Calculo simple para visualización
-        cols_notas = [c for c in df_editado.columns if "Nota" in c]
-        df_promedios = df_editado.copy()
-        df_promedios[cols_notas] = df_promedios[cols_notas].apply(pd.to_numeric, errors='coerce')
-        df_promedios['Promedio'] = df_promedios[cols_notas].mean(axis=1).round(1)
-        
-        # Estilizar: Rojo si es menor a 4.0
-        def estilo_notas(val):
-            if isinstance(val, float) or isinstance(val, int):
-                color = '#ff4b4b' if val < 4.0 else '#90ee90' # Rojo o Verde suave
-                return f'color: {color}; font-weight: bold'
-            return ''
+    if curso_actual:
+        st.markdown(f"### 📝 Planilla: {curso_actual}")
+        df_curso = st.session_state.datos_cursos[curso_actual]
 
-        st.dataframe(df_promedios.style.applymap(estilo_notas, subset=cols_notas + ['Promedio']), use_container_width=True)
-
-# --- PÁGINA: PLANIFICACIÓN ---
-elif st.session_state.pagina_actual == "Planificación":
-    st.title("📅 Planificador Semanal")
-    st.caption("Sin sábados ni domingos. Solo lo importante.")
-    
-    col_form, col_cal = st.columns([1, 2])
-    
-    with col_form:
-        st.markdown("#### 📌 Nueva Actividad")
-        dia_evento = st.selectbox("Día:", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"])
-        titulo_evento = st.text_input("Actividad:")
-        tipo_evento = st.selectbox("Etiqueta:", ["Clase", "Reunión", "Tesis", "Personal", "Urgente"])
-        
-        if st.button("Agendar"):
-            if titulo_evento:
-                st.session_state.planificacion.append({
-                    "dia": dia_evento, 
-                    "titulo": titulo_evento, 
-                    "tipo": tipo_evento
-                })
-                st.success("Agendado")
-                st.rerun()
+        # --- CARGA MASIVA (CSV) ---
+        uploaded_file = st.file_uploader(f"📂 Cargar lista de estudiantes (CSV) para {curso_actual}", type=["csv"])
+        if uploaded_file:
+            try:
+                # Cargar CSV
+                df_nuevo = pd.read_csv(uploaded_file)
+                # Asegurar que tenga columna Nombre
+                if "Nombre" not in df_nuevo.columns and "Estudiante" in df_nuevo.columns:
+                    df_nuevo.rename(columns={"Estudiante": "Nombre"}, inplace=True)
                 
+                st.session_state.datos_cursos[curso_actual] = df_nuevo
+                st.success("¡Lista cargada exitosamente!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error al leer CSV: {e}")
+
+        # --- AGREGAR COLUMNAS DE NOTAS ---
+        col_add, col_dummy = st.columns([1, 3])
+        with col_add:
+            if st.button("➕ Agregar Nueva Evaluación"):
+                nuevo_num = len([c for c in df_curso.columns if "Nota" in c]) + 1
+                df_curso[f"Nota {nuevo_num}"] = 0.0
+                st.rerun()
+
+        # --- CONFIGURAR EDITOR ---
+        # Configuramos dinámicamente las columnas para que sean numéricas
+        column_cfg = {"Nombre": st.column_config.TextColumn(disabled=False)}
+        
+        for col in df_curso.columns:
+            if "Nota" in col:
+                column_cfg[col] = st.column_config.NumberColumn(
+                    label=col,
+                    min_value=1.0, max_value=7.0, step=0.1, format="%.1f"
+                )
+
+        # --- EDITOR PRINCIPAL ---
+        df_editado = st.data_editor(
+            df_curso,
+            column_config=column_cfg,
+            use_container_width=True,
+            num_rows="dynamic",
+            key=f"editor_{curso_actual}"
+        )
+        
+        # Guardar cambios
+        st.session_state.datos_cursos[curso_actual] = df_editado
+
+        # --- CÁLCULO PROMEDIOS ---
         st.write("---")
-        if st.button("🗑️ Borrar Todo el calendario"):
+        if not df_editado.empty:
+            cols_notas = [c for c in df_editado.columns if "Nota" in c]
+            if cols_notas:
+                df_prom = df_editado.copy()
+                # Convertir a números por seguridad
+                for c in cols_notas:
+                    df_prom[c] = pd.to_numeric(df_prom[c], errors='coerce')
+                
+                # Calcular promedio ignorando ceros
+                df_prom['Promedio'] = df_prom[cols_notas].replace(0, pd.NA).mean(axis=1).round(1)
+                
+                # Mostrar
+                def color_rojo(val):
+                     # Lógica segura para colorear
+                     try:
+                         if float(val) < 4.0: return 'color: #ff4b4b'
+                     except: pass
+                     return 'color: #00ff41' if st.session_state.tema == 'Hacker (Matrix)' else 'color: black'
+
+                st.dataframe(df_prom[['Nombre', 'Promedio']].style.applymap(color_rojo, subset=['Promedio']), use_container_width=True)
+
+# --- GESTOR DE DÉCIMAS ---
+elif st.session_state.pagina_actual == "Gestor de Décimas":
+    st.title("🌟 Banco de Décimas")
+    st.info("Desacoplado de las notas. Agrega o quita décimas rápidamente.")
+
+    # Seleccionar curso
+    curso_sel = st.selectbox("Curso:", list(st.session_state.datos_cursos.keys()))
+    
+    if curso_sel:
+        # Obtener lista de estudiantes de ese curso
+        estudiantes = st.session_state.datos_cursos[curso_sel]['Nombre'].tolist()
+        
+        # Preparar DataFrame de décimas
+        datos_decimas = []
+        for est in estudiantes:
+            # Buscar si ya tiene décimas, si no, 0
+            val = st.session_state.decimas.get(f"{curso_sel}_{est}", 0)
+            datos_decimas.append({"Estudiante": est, "Décimas": val})
+        
+        df_dec = pd.DataFrame(datos_decimas)
+        
+        # Editor especial para décimas
+        df_dec_editado = st.data_editor(
+            df_dec,
+            column_config={
+                "Estudiante": st.column_config.TextColumn(disabled=True),
+                "Décimas": st.column_config.NumberColumn(
+                    step=1, min_value=-10, max_value=50, format="%d 🌟"
+                )
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Guardar cambios en el diccionario global
+        for index, row in df_dec_editado.iterrows():
+            clave = f"{curso_sel}_{row['Estudiante']}"
+            st.session_state.decimas[clave] = row['Décimas']
+
+# --- PLANIFICACIÓN ---
+elif st.session_state.pagina_actual == "Planificación":
+    st.title("📅 Planificador")
+    
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        st.subheader("Agendar")
+        dia = st.selectbox("Día", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"])
+        act = st.text_input("Actividad")
+        tag = st.selectbox("Etiqueta", ["Clase", "Reunión", "Tesis", "Personal"])
+        if st.button("Guardar Evento") and act:
+            st.session_state.planificacion.append({"dia": dia, "titulo": act, "tipo": tag})
+            st.success("Guardado")
+            st.rerun()
+            
+        if st.button("Limpiar Todo"):
             st.session_state.planificacion = []
             st.rerun()
-
-    with col_cal:
-        st.markdown("#### 🗓️ Tu Semana")
-        dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
-        
-        # Colores por etiqueta
-        colores = {
-            "Clase": "blue", "Reunión": "orange", "Tesis": "purple", 
-            "Personal": "green", "Urgente": "red"
-        }
-        
-        cols = st.columns(5)
-        for idx, dia in enumerate(dias_semana):
-            with cols[idx]:
-                st.markdown(f"**{dia}**")
-                eventos_dia = [e for e in st.session_state.planificacion if e['dia'] == dia]
-                
-                if not eventos_dia:
-                    st.markdown("*-Libre-*")
-                
-                for i, evento in enumerate(eventos_dia):
-                    color = colores.get(evento['tipo'], "grey")
-                    # Tarjeta de evento simulada
-                    st.markdown(f"""
-                    <div style="background-color: {color}; padding: 5px; border-radius: 5px; color: white; margin-bottom: 5px; font-size: 0.8em;">
-                        {evento['titulo']}
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # Opción pequeña para borrar individualmente
-                    if st.button("x", key=f"del_{dia}_{i}", help=f"Borrar {evento['titulo']}"):
-                        st.session_state.planificacion.remove(evento)
+            
+    with c2:
+        st.subheader("Semana")
+        for d in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]:
+            with st.expander(d, expanded=True):
+                eventos = [e for e in st.session_state.planificacion if e['dia'] == d]
+                for i, e in enumerate(eventos):
+                    col_a, col_b = st.columns([4, 1])
+                    col_a.markdown(f"**[{e['tipo']}]** {e['titulo']}")
+                    if col_b.button("X", key=f"del_{d}_{i}"):
+                        st.session_state.planificacion.remove(e)
                         st.rerun()
 
-# --- PÁGINA: TESIS ---
+# --- TESIS ---
 elif st.session_state.pagina_actual == "Tesis":
-    st.title("📚 Bitácora de Investigación")
+    st.title("🎓 Tesis & Papers")
     
-    tab1, tab2 = st.tabs(["📝 Nuevo Paper / Nota", "🗃️ Mis Resúmenes"])
-    
-    with tab1:
-        st.write("Ingresa la información clave del paper. No subimos archivos, solo tus ideas.")
-        t_titulo = st.text_input("Título del Paper / Tarea:")
-        t_resumen = st.text_area("Resumen / Notas importantes:", height=150)
+    st.markdown("### 📝 Nuevo Registro")
+    tit = st.text_input("Título Paper / Tarea")
+    res = st.text_area("Resumen")
+    if st.button("Guardar Paper"):
+        st.session_state.tesis_papers.append({"titulo": tit, "resumen": res, "leido": False})
+        st.rerun()
         
-        if st.button("Guardar en Bitácora"):
-            if t_titulo:
-                st.session_state.tesis_papers.append({
-                    "titulo": t_titulo,
-                    "resumen": t_resumen,
-                    "leido": False,
-                    "fecha": datetime.now().strftime("%Y-%m-%d")
-                })
-                st.success("Guardado correctamente")
-    
-    with tab2:
-        st.write(f"Tienes {len(st.session_state.tesis_papers)} registros.")
-        
-        for i, paper in enumerate(st.session_state.tesis_papers):
-            # Contenedor visual para cada paper
-            check_leido = "✅" if paper['leido'] else "⏳"
-            with st.expander(f"{check_leido} {paper['titulo']} ({paper['fecha']})"):
-                st.write(paper['resumen'])
-                
-                c1, c2 = st.columns([1, 4])
-                # Checkbox para marcar como leído
-                leido_status = c1.checkbox("Marcar Leído", value=paper['leido'], key=f"leido_{i}")
-                if leido_status != paper['leido']:
-                    st.session_state.tesis_papers[i]['leido'] = leido_status
-                    st.rerun()
-                
-                if c2.button("Eliminar", key=f"elim_paper_{i}"):
-                    st.session_state.tesis_papers.pop(i)
-                    st.rerun()
+    st.write("---")
+    for i, p in enumerate(st.session_state.tesis_papers):
+        icon = "✅" if p['leido'] else "⏳"
+        with st.expander(f"{icon} {p['titulo']}"):
+            st.write(p['resumen'])
+            if st.checkbox("Marcar Leído", value=p['leido'], key=f"p_{i}"):
+                st.session_state.tesis_papers[i]['leido'] = True
+                st.rerun()
+            if st.button("Borrar", key=f"del_p_{i}"):
+                st.session_state.tesis_papers.pop(i)
+                st.rerun()
 
-# --- PÁGINA: CONFIGURACIÓN ---
+# --- CONFIGURACIÓN (RESPALDO ARREGLADO) ---
 elif st.session_state.pagina_actual == "Configuración":
-    st.title("⚙️ Configuración & Datos")
+    st.title("⚙️ Configuración")
     
-    st.subheader("🎨 Temas Visuales")
-    tema_seleccionado = st.selectbox(
-        "Elige el aspecto de la aplicación:",
-        ["Claro", "Oscuro", "Pastel", "Hacker (Matrix)"],
-        index=["Claro", "Oscuro", "Pastel", "Hacker (Matrix)"].index(st.session_state.tema)
-    )
-    
-    if tema_seleccionado != st.session_state.tema:
-        st.session_state.tema = tema_seleccionado
+    # Selector de tema
+    tema_nuevo = st.selectbox("Tema Visual", ["Hacker (Matrix)", "Claro"], 
+                             index=0 if st.session_state.tema == 'Hacker (Matrix)' else 1)
+    if tema_nuevo != st.session_state.tema:
+        st.session_state.tema = tema_nuevo
         st.rerun()
 
     st.write("---")
-    st.subheader("💾 Respaldo de Usuario")
-    st.info("Para mantener tus datos seguros al cambiar de computador, usa estos botones. Funciona como tu 'Cuenta de Usuario'.")
+    st.subheader("💾 Sistema de Respaldo (JSON)")
     
-    col_dl, col_ul = st.columns(2)
+    # DESCARGAR
+    datos_exportar = {
+        "cursos": {k: v.to_json() for k, v in st.session_state.datos_cursos.items()},
+        "decimas": st.session_state.decimas,
+        "planificacion": st.session_state.planificacion,
+        "tesis": st.session_state.tesis_papers,
+        "tema": st.session_state.tema
+    }
+    st.download_button("⬇️ Descargar Respaldo", data=json.dumps(datos_exportar), file_name="respaldo_cristobal.json", mime="application/json")
     
-    with col_dl:
-        # Lógica para empaquetar TODO en un solo archivo JSON
-        datos_totales = {
-            "cursos": {k: v.to_json() for k, v in st.session_state.datos_cursos.items()},
-            "planificacion": st.session_state.planificacion,
-            "tesis": st.session_state.tesis_papers,
-            "tema": st.session_state.tema
-        }
-        json_str = json.dumps(datos_totales)
-        
-        st.download_button(
-            label="⬇️ Descargar Respaldo (Mi Usuario)",
-            data=json_str,
-            file_name="respaldo_profe.json",
-            mime="application/json",
-            help="Guarda este archivo en tu correo o pendrive."
-        )
-
-    with col_ul:
-        uploaded_file = st.file_uploader("⬆️ Cargar Respaldo Anterior", type="json")
-        if uploaded_file is not None:
-            try:
-                data = json.load(uploaded_file)
-                
-                # Restaurar Cursos
-                if "cursos" in data:
-                    st.session_state.datos_cursos = {k: pd.read_json(v) for k, v in data["cursos"].items()}
-                
-                # Restaurar Planificación
-                if "planificacion" in data:
-                    st.session_state.planificacion = data["planificacion"]
-                    
-                # Restaurar Tesis
-                if "tesis" in data:
-                    st.session_state.tesis_papers = data["tesis"]
-                    
-                # Restaurar Tema
-                if "tema" in data:
-                    st.session_state.tema = data["tema"]
-                
-                st.success("¡Sesión restaurada con éxito!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error al cargar el archivo: {e}")
+    # SUBIR (CON CORRECCIÓN DE ERRORES)
+    archivo = st.file_uploader("⬆️ Cargar Respaldo", type="json")
+    if archivo:
+        try:
+            data = json.load(archivo)
+            
+            # Restaurar Cursos CONVERTIENDO NÚMEROS
+            if "cursos" in data:
+                nuevos_cursos = {}
+                for nombre_curso, json_data in data["cursos"].items():
+                    df = pd.read_json(json_data)
+                    # Forzar que las columnas 'Nota X' sean números (float)
+                    cols_notas = [c for c in df.columns if "Nota" in c]
+                    for c in cols_notas:
+                        df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0.0)
+                    nuevos_cursos[nombre_curso] = df
+                st.session_state.datos_cursos = nuevos_cursos
+            
+            # Restaurar resto de datos
+            if "decimas" in data: st.session_state.decimas = data["decimas"]
+            if "planificacion" in data: st.session_state.planificacion = data["planificacion"]
+            if "tesis" in data: st.session_state.tesis_papers = data["tesis"]
+            if "tema" in data: st.session_state.tema = data["tema"]
+            
+            st.success("¡Respaldo cargado sin errores!")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error al cargar: {e}")
