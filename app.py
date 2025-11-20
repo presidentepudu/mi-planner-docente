@@ -6,7 +6,7 @@ import streamlit.components.v1 as components
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS (TEMAS CORREGIDOS)
 # ==========================================
-st.set_page_config(page_title="Planner Docente V8", layout="wide", page_icon="🎓")
+st.set_page_config(page_title="Planner Docente V9", layout="wide", page_icon="🦌")
 
 def aplicar_estilos():
     tema = st.session_state.get('tema', 'Hacker (Matrix)')
@@ -43,26 +43,22 @@ def aplicar_estilos():
         div[data-testid="stExpander"] { background-color: #fff5f8; border-radius: 10px; border: 1px solid #f0dae0; }
 
         /* --- CORRECCIÓN DE ELEMENTOS OSCUROS --- */
-        /* Selectores (dropdowns) y cajas de texto */
         div[data-baseweb="select"] > div, input, textarea {
-            background-color: #fff0f5 !important; /* Lavanda muy claro */
+            background-color: #fff0f5 !important;
             color: #5c5c5c !important;
-            border-color: #dcd0ff !important; /* Borde lavanda */
+            border-color: #dcd0ff !important;
         }
-        /* Color del texto dentro de los selectores */
         div[data-baseweb="select"] span { color: #5c5c5c !important; }
 
-        /* Área de subir archivos (File Uploader) */
         div[data-testid="stFileUploader"] section {
-            background-color: #f3eaff !important; /* Lavanda suave */
+            background-color: #f3eaff !important;
             border: 1px dashed #dcd0ff;
         }
         div[data-testid="stFileUploader"] button {
-             background-color: #dcd0ff !important; /* Boton interno lavanda */
+             background-color: #dcd0ff !important;
              color: #5c5c5c !important;
              border: none;
         }
-        /* Icono de subir archivo */
         div[data-testid="stFileUploader"] svg { color: #9370db !important; }
         
         .pudu-svg { color: #9370db; }
@@ -80,15 +76,13 @@ def aplicar_estilos():
         section[data-testid="stSidebar"] > div { background-color: #f8f9fa !important; }
         section[data-testid="stSidebar"] { background-color: #f8f9fa !important; border-right: 1px solid #dee2e6;}
         
-        /* --- CORRECCIÓN CRÍTICA: Texto del menú lateral --- */
-        /* Forzamos a que los textos y radios del sidebar sean oscuros */
+        /* Forzamos texto oscuro en el sidebar */
         section[data-testid="stSidebar"] label, 
         section[data-testid="stSidebar"] span,
         section[data-testid="stSidebar"] p { 
             color: #31333F !important; 
         }
         
-        /* Asegurar inputs claros */
         div[data-baseweb="select"] > div, input, textarea {
             background-color: #ffffff !important;
             color: #31333F !important;
@@ -99,9 +93,31 @@ def aplicar_estilos():
         </style>
         """, unsafe_allow_html=True)
 
-# (Mantenemos la función pero no la llamamos por ahora)
+# FUNCIÓN DEL NUEVO PUDÚ ESTILO TRIBAL/EMBLEMA
 def mostrar_pudu():
-    pudu_svg = """... (código del pudú anterior) ..."""
+    # Este vector tiene un estilo de escudo/tatuaje, más serio.
+    pudu_svg = """
+    <div style="text-align: center; margin-bottom: 20px;">
+    <svg class="pudu-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" xml:space="preserve" height="120px" width="120px">
+    <path fill="currentColor" d="M250,67.6c-14.5-22.9-34.8-42.3-61.6-53.8c-3.1-1.3-6.5-1.3-9.7,0.1C154.2,25.6,133.7,42.4,118,63.2
+        c-8.6,11.4-16.4,23.5-23.3,36.1c-13.1-2.3-26.3-3.3-39.3-3.2c-13.4,0.1-26.2,2.2-38.5,6.1c-4.3,1.4-8.1,4.2-10.7,7.9
+        c-8.5,12.2-14.9,25.5-19.3,39.6c-8.7,28.2-8.7,58.3,0.1,86.5c4.5,14.5,11.9,28.2,21.9,40.1c5.8,6.9,12.5,13,19.9,18.3
+        c15.6,11.1,32.7,19.9,50.5,26.6c20.6,7.7,42.1,13.4,64,16.8c-3.6,12-9,23.3-16.3,33.6c-7.7,10.9-17.1,20.6-27.8,28.7
+        c-5.8,4.4-12,8.3-18.5,11.8c-10.9,5.8-22.4,10.3-34.2,13.6c-6.1,1.7-11.7,5.2-15.7,10c-8.1,9.7-14.5,20.5-19.1,32.1
+        c-9.5,24.1-11.2,50.1-5,75.4c1.7,7,5.2,13.4,10.2,18.5c10.1,10.3,22.6,17.8,36.3,22.2c13.9,4.5,28.5,6.2,43,5.1
+        c17.7-1.3,34.9-6.3,50.7-14.7c18-9.6,33.8-22.7,46.8-38.5c6.7-8.1,12.6-16.7,17.8-25.8c5.1,9.1,11.1,17.7,17.8,25.8
+        c13,15.8,28.7,28.9,46.8,38.5c15.8,8.4,32.9,13.4,50.7,14.7c14.5,1.1,29.1-0.6,43-5.1c13.7-4.4,26.2-11.9,36.3-22.2
+        c4.9-5.1,8.5-11.5,10.2-18.5c6.2-25.3,4.5-51.3-5-75.4c-4.6-11.6-10.9-22.4-19.1-32.1c-4-4.8-9.6-8.3-15.7-10
+        c-11.9-3.3-23.3-7.8-34.2-13.6c-6.5-3.5-12.7-7.4-18.5-11.8c-10.7-8.1-20.1-17.9-27.8-28.7c-7.2-10.2-12.7-21.5-16.3-33.6
+        c21.9-3.4,43.4-9.1,64-16.8c17.9-6.7,34.9-15.4,50.5-26.6c7.4-5.3,14-11.4,19.9-18.3c10-11.9,17.4-25.6,21.9-40.1
+        c8.8-28.3,8.8-58.3,0.1-86.5c-4.3-14.1-10.8-27.4-19.3-39.6c-2.6-3.7-6.4-6.5-10.7-7.9c-12.3-3.9-25.1-6-38.5-6.1
+        c-13-0.1-26.2,0.9-39.3,3.2c-6.9-12.5-14.7-24.7-23.3-36.1C316.3,42.4,295.8,25.6,271.3,14c-3.2-1.5-6.7-1.5-9.7-0.1
+        C234.8,25.2,214.5,44.7,200,67.6C216.2,62.7,233.1,60.3,250,60.3S283.8,62.7,300,67.6z M147.2,148c-11.3,14.2-27.8,23.3-46,25.3
+        c1.4-8.6,4.2-16.8,8.2-24.4c6.3-11.9,14.8-22.5,25.1-31.4C138.5,127,143.6,137.9,147.2,148z M352.8,148
+        c3.6-10.1,8.8-20.9,12.7-30.5c10.3,8.9,18.8,19.4,25.1,31.4c4,7.6,6.9,15.8,8.2,24.4C380.5,171.3,364.1,162.2,352.8,148z"/>
+    </svg>
+    </div>
+    """
     st.sidebar.markdown(pudu_svg, unsafe_allow_html=True)
 
 
@@ -138,7 +154,8 @@ aplicar_estilos()
 # ==========================================
 with st.sidebar:
     st.title("Sistema Docente")
-    # mostrar_pudu()  <-- PUDÚ EN PAUSA POR AHORA
+    # AQUI ESTÁ TU NUEVO PUDÚ TRIBAL
+    mostrar_pudu()
     
     seleccion = st.radio(
         "Navegación:", 
@@ -388,7 +405,7 @@ elif st.session_state.pagina_actual == "Configuración":
         "tesis": st.session_state.tesis_papers,
         "tema": st.session_state.tema
     }
-    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v8_fixed.json", mime="application/json")
+    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v9_tribal.json", mime="application/json")
     
     archivo = st.file_uploader("⬆️ Cargar Respaldo", type="json")
     if archivo:
