@@ -4,9 +4,9 @@ import json
 import streamlit.components.v1 as components
 
 # ==========================================
-# 1. CONFIGURACIÓN Y ESTILOS (TEMAS)
+# 1. CONFIGURACIÓN Y ESTILOS (TEMAS CORREGIDOS)
 # ==========================================
-st.set_page_config(page_title="Planner Docente V7", layout="wide", page_icon="🦌")
+st.set_page_config(page_title="Planner Docente V8", layout="wide", page_icon="🎓")
 
 def aplicar_estilos():
     tema = st.session_state.get('tema', 'Hacker (Matrix)')
@@ -14,16 +14,13 @@ def aplicar_estilos():
     if tema == 'Hacker (Matrix)':
         st.markdown("""
         <style>
-        /* === TEMA HACKER === */
+        /* === TEMA HACKER (Se mantiene igual) === */
         .stApp { background-color: #000000; color: #00ff41; font-family: 'Courier New', monospace; }
         div[data-testid="stMarkdownContainer"] p, h1, h2, h3, h4, span, label { color: #00ff41 !important; }
         .stButton>button { background-color: #0d0208; color: #00ff41; border: 1px solid #00ff41; }
-        /* Menú lateral */
         section[data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #00ff41; }
-        /* Inputs */
         input, textarea, select, div[data-baseweb="select"] > div { background-color: #111 !important; color: #00ff41 !important; border-color: #00ff41 !important; }
         div[data-testid="stExpander"] { background-color: #0a0a0a; border: 1px solid #00ff41; }
-        /* Color del Pudú SVG */
         .pudu-svg { color: #00ff41; } 
         </style>
         """, unsafe_allow_html=True)
@@ -31,16 +28,43 @@ def aplicar_estilos():
     elif tema == 'Pastel':
         st.markdown("""
         <style>
-        /* === TEMA PASTEL === */
+        /* === TEMA PASTEL (Corregido) === */
         .stApp { background-color: #fffaf0; color: #5c5c5c; }
-        h1, h2, h3, h4, span, label, p { color: #5c5c5c !important; }
-        /* Forzar color del menú lateral */
+        h1, h2, h3, h4, p, label, span { color: #5c5c5c !important; }
+        
+        /* Menú lateral lavanda */
         section[data-testid="stSidebar"] > div { background-color: #e6e6fa !important; }
         section[data-testid="stSidebar"] { background-color: #e6e6fa !important; }
+        /* Asegurar que el texto del menú lateral sea oscuro */
+        section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] span { color: #5c5c5c !important; }
+
+        /* Botones y Expanders */
+        .stButton>button { background-color: #ffd1dc; color: black; border-radius: 15px; border: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);}
+        div[data-testid="stExpander"] { background-color: #fff5f8; border-radius: 10px; border: 1px solid #f0dae0; }
+
+        /* --- CORRECCIÓN DE ELEMENTOS OSCUROS --- */
+        /* Selectores (dropdowns) y cajas de texto */
+        div[data-baseweb="select"] > div, input, textarea {
+            background-color: #fff0f5 !important; /* Lavanda muy claro */
+            color: #5c5c5c !important;
+            border-color: #dcd0ff !important; /* Borde lavanda */
+        }
+        /* Color del texto dentro de los selectores */
+        div[data-baseweb="select"] span { color: #5c5c5c !important; }
+
+        /* Área de subir archivos (File Uploader) */
+        div[data-testid="stFileUploader"] section {
+            background-color: #f3eaff !important; /* Lavanda suave */
+            border: 1px dashed #dcd0ff;
+        }
+        div[data-testid="stFileUploader"] button {
+             background-color: #dcd0ff !important; /* Boton interno lavanda */
+             color: #5c5c5c !important;
+             border: none;
+        }
+        /* Icono de subir archivo */
+        div[data-testid="stFileUploader"] svg { color: #9370db !important; }
         
-        .stButton>button { background-color: #ffd1dc; color: black; border-radius: 15px; border: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);}
-        div[data-testid="stExpander"] { background-color: #fff5f8; border-radius: 10px; border: none; }
-        /* Color del Pudú SVG (Un tono morado suave para que combine) */
         .pudu-svg { color: #9370db; }
         </style>
         """, unsafe_allow_html=True)
@@ -48,36 +72,36 @@ def aplicar_estilos():
     elif tema == 'Claro (Oficina)':
         st.markdown("""
         <style>
-        /* === TEMA CLARO OFICINA === */
+        /* === TEMA CLARO OFICINA (Corregido) === */
         .stApp { background-color: #ffffff; color: #31333F; }
-        h1, h2, h3, h4, span, label { color: #31333F !important; }
-        /* Forzar color del menú lateral */
+        h1, h2, h3, h4, p, label, span { color: #31333F !important; }
+        
+        /* Menú lateral gris claro */
         section[data-testid="stSidebar"] > div { background-color: #f8f9fa !important; }
         section[data-testid="stSidebar"] { background-color: #f8f9fa !important; border-right: 1px solid #dee2e6;}
         
-        /* Color del Pudú SVG */
+        /* --- CORRECCIÓN CRÍTICA: Texto del menú lateral --- */
+        /* Forzamos a que los textos y radios del sidebar sean oscuros */
+        section[data-testid="stSidebar"] label, 
+        section[data-testid="stSidebar"] span,
+        section[data-testid="stSidebar"] p { 
+            color: #31333F !important; 
+        }
+        
+        /* Asegurar inputs claros */
+        div[data-baseweb="select"] > div, input, textarea {
+            background-color: #ffffff !important;
+            color: #31333F !important;
+            border-color: #cccccc !important;
+        }
+
         .pudu-svg { color: #31333F; }
         </style>
         """, unsafe_allow_html=True)
 
-# FUNCIÓN DEL NUEVO PUDÚ MEJORADO (VECTOR)
+# (Mantenemos la función pero no la llamamos por ahora)
 def mostrar_pudu():
-    # Nuevo vector SVG estilo 'kawaii' más detallado
-    pudu_svg = """
-    <div style="text-align: center; margin-bottom: 20px;">
-    <svg class="pudu-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" xml:space="preserve" height="100px" width="100px">
-    <path fill="currentColor" d="M417.4,85.7c-14.3-17.2-35.7-27.2-60.1-28.2c-3.7-0.1-7.3,0.8-10.6,2.6c-34.1,18.6-75.5,23.5-114.2,13.7
-        c-11.1-2.8-21.4-6.9-30.8-12.1c-5.2-2.9-11.3-3.8-17.1-2.4c-28.2,6.6-47.7,30.9-49.1,61.1c-0.6,13.8,3.7,27.2,12.2,37.9
-        c4.9,6.2,10.8,11.4,17.6,15.5c18.2,11.1,36.6,21.9,55.3,32.3c25,13.9,50.4,27,76.2,39.4c17.9,8.6,36.1,16.6,54.5,23.9
-        c21.4,8.5,43.8,14.8,66.8,18.7c6.7,1.1,13.5,1.7,20.2,1.7c35.3,0,64.1-28.7,64.1-64.1c0-24.5-13.9-46.2-34.6-57.3
-        C449.3,147.1,437.4,114.9,417.4,85.7z M384,320c-17.7,0-32-14.3-32-32s14.3-32,32-32s32,14.3,32,32S401.7,320,384,320z M448,192
-        c-17.7,0-32-14.3-32-32s14.3-32,32-32s32,14.3,32,32S465.7,192,448,192z M128,288c-17.7,0-32-14.3-32-32s14.3-32,32-32s32,14.3,32,32
-        S145.7,288,128,288z"/>
-    <path fill="currentColor" d="M256,352c-44.2,0-80,35.8-80,80s35.8,80,80,80s80-35.8,80-80S300.2,352,256,352z M256,480
-        c-26.5,0-48-21.5-48-48s21.5-48,48-48s48,21.5,48,48S282.5,480,256,480z"/>
-    </svg>
-    </div>
-    """
+    pudu_svg = """... (código del pudú anterior) ..."""
     st.sidebar.markdown(pudu_svg, unsafe_allow_html=True)
 
 
@@ -114,8 +138,7 @@ aplicar_estilos()
 # ==========================================
 with st.sidebar:
     st.title("Sistema Docente")
-    # AQUI MOSTRAMOS AL NUEVO PUDÚ
-    mostrar_pudu()
+    # mostrar_pudu()  <-- PUDÚ EN PAUSA POR AHORA
     
     seleccion = st.radio(
         "Navegación:", 
@@ -365,7 +388,7 @@ elif st.session_state.pagina_actual == "Configuración":
         "tesis": st.session_state.tesis_papers,
         "tema": st.session_state.tema
     }
-    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v7_pudu.json", mime="application/json")
+    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v8_fixed.json", mime="application/json")
     
     archivo = st.file_uploader("⬆️ Cargar Respaldo", type="json")
     if archivo:
