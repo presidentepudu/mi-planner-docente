@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import json
+import streamlit.components.v1 as components
 
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS (TEMAS)
 # ==========================================
-st.set_page_config(page_title="Planner Docente V5", layout="wide", page_icon="🎓")
+st.set_page_config(page_title="Planner Docente V6", layout="wide", page_icon="🦌")
 
 def aplicar_estilos():
     tema = st.session_state.get('tema', 'Hacker (Matrix)')
@@ -13,40 +14,69 @@ def aplicar_estilos():
     if tema == 'Hacker (Matrix)':
         st.markdown("""
         <style>
+        /* Color base verde neon */
         .stApp { background-color: #000000; color: #00ff41; font-family: 'Courier New', monospace; }
         div[data-testid="stMarkdownContainer"] p { color: #00ff41 !important; }
-        h1, h2, h3 { color: #00ff41 !important; }
+        h1, h2, h3, h4, span { color: #00ff41 !important; }
         .stButton>button { background-color: #0d0208; color: #00ff41; border: 1px solid #00ff41; }
         div[data-testid="stSidebar"] { background-color: #0a0a0a; border-right: 1px solid #00ff41; }
-        input, textarea, select { background-color: #111 !important; color: #00ff41 !important; }
+        /* Para que los inputs de texto tambien sean verdes */
+        input, textarea, select, div[data-baseweb="select"] > div { background-color: #111 !important; color: #00ff41 !important; border-color: #00ff41 !important; }
         div[data-testid="stExpander"] { background-color: #0a0a0a; border: 1px solid #00ff41; }
+        /* Color del Pudú SVG */
+        .pudu-svg { color: #00ff41; } 
         </style>
         """, unsafe_allow_html=True)
         
     elif tema == 'Pastel':
         st.markdown("""
         <style>
+        /* Color base gris azulado */
         .stApp { background-color: #fdf6e3; color: #586e75; }
-        /* Menú lateral color claro */
+        h1, h2, h3, h4, span { color: #586e75 !important; }
         div[data-testid="stSidebar"] { background-color: #e6e6fa; }
         .stButton>button { background-color: #ffd1dc; color: black; border-radius: 15px; border: none;}
         div[data-testid="stExpander"] { background-color: #fff0f5; border-radius: 10px; }
+        /* Color del Pudú SVG */
+        .pudu-svg { color: #586e75; }
         </style>
         """, unsafe_allow_html=True)
         
     elif tema == 'Claro (Oficina)':
         st.markdown("""
         <style>
-        .stApp { background-color: #ffffff; color: black; }
+        /* Color base negro/gris oscuro */
+        .stApp { background-color: #ffffff; color: #31333F; }
+        h1, h2, h3, h4, span { color: #31333F !important; }
         div[data-testid="stSidebar"] { background-color: #f0f2f6; }
+        /* Color del Pudú SVG */
+        .pudu-svg { color: #31333F; }
         </style>
         """, unsafe_allow_html=True)
+
+# FUNCIÓN DEL PUDÚ (VECTOR)
+def mostrar_pudu():
+    # Este es un vector SVG de una carita estilo kawaii.
+    # Usa 'currentColor' para heredar el color del texto del tema actual.
+    pudu_svg = """
+    <div style="text-align: center; margin-bottom: 20px;">
+    <svg class="pudu-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" xml:space="preserve" height="80px" width="80px">
+        <path fill="currentColor" d="M88.2,27.5c-2.3-4.4-6.6-7.5-11.3-8.9c-0.6-2.9-2.1-5.6-4.5-7.6C69.1,8.3,65,7.7,61.4,9.1
+            c-3.6-1.6-7.6-1.8-11.5-0.5c-3.8,1.3-6.9,4.1-8.6,7.6c-4.9,1.6-9,5-11.1,9.6c-2.2,4.7-2.4,10.1-0.4,15.1c0.8,2,2.1,3.8,3.6,5.2
+            c-1.8,4.3-1.9,9.1-0.3,13.5c1.7,4.7,5.3,8.5,9.9,10.5c4.6,2,9.7,2.1,14.4,0.3c2.8,2.3,6.4,3.7,10.1,3.7c3.7,0,7.3-1.3,10.1-3.7
+            c4.7,1.8,9.8,1.7,14.4-0.3c4.6-2,8.2-5.9,9.9-10.5c1.6-4.4,1.4-9.2-0.3-13.5c1.6-1.5,2.8-3.2,3.6-5.2
+            C90.6,37.5,90.4,32.2,88.2,27.5z M36.5,55c-2.8,0-5-2.2-5-5s2.2-5,5-5s5,2.2,5,5S39.3,55,36.5,55z M50,65c-3,0-5.5-2-6.3-4.8
+            h12.6C55.5,63,53,65,50,65z M63.5,55c-2.8,0-5-2.2-5-5s2.2-5,5-5s5,2.2,5,5S66.3,55,63.5,55z"/>
+    </svg>
+    </div>
+    """
+    st.sidebar.markdown(pudu_svg, unsafe_allow_html=True)
+
 
 # ==========================================
 # 2. INICIALIZACIÓN DE DATOS
 # ==========================================
 if 'datos_cursos' not in st.session_state:
-    # Cursos base
     st.session_state.datos_cursos = {
         "7mo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
         "8vo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
@@ -54,7 +84,6 @@ if 'datos_cursos' not in st.session_state:
         "Electivo Programación": pd.DataFrame(columns=["Nombre", "Nota 1"])
     }
 
-# Diccionario para guardar DataFrames de décimas por curso
 if 'datos_decimas' not in st.session_state:
     st.session_state.datos_decimas = {}
 
@@ -77,6 +106,8 @@ aplicar_estilos()
 # ==========================================
 with st.sidebar:
     st.title("💻 Sistema Docente")
+    # AQUI MOSTRAMOS AL PUDÚ EN LA BARRA LATERAL
+    mostrar_pudu()
     
     seleccion = st.radio(
         "Navegación:", 
@@ -92,7 +123,7 @@ with st.sidebar:
 # 4. LÓGICA DE PÁGINAS
 # ==========================================
 
-# --- INICIO (RESTAURADO) ---
+# --- INICIO ---
 if st.session_state.pagina_actual == "Inicio":
     st.title(f"👋 Bienvenido, Profesor")
     st.markdown("### Tu centro de comando personal.")
@@ -123,11 +154,10 @@ if st.session_state.pagina_actual == "Inicio":
             st.session_state.pagina_actual = "Tesis"
             st.rerun()
 
-# --- MIS CURSOS (TABLAS ACOPLADAS) ---
+# --- MIS CURSOS ---
 elif st.session_state.pagina_actual == "Mis Cursos":
     st.title("📂 Gestión de Cursos")
     
-    # Selector
     lista_cursos = list(st.session_state.datos_cursos.keys())
     if not lista_cursos:
         st.warning("Crea un curso primero.")
@@ -137,13 +167,13 @@ elif st.session_state.pagina_actual == "Mis Cursos":
         with col_sel:
             curso_actual = st.selectbox("Selecciona Curso:", lista_cursos)
         with col_del:
+            st.write("") # Espacio estetico
             if st.button("🗑️ Borrar Curso"):
                 del st.session_state.datos_cursos[curso_actual]
                 if curso_actual in st.session_state.datos_decimas:
                     del st.session_state.datos_decimas[curso_actual]
                 st.rerun()
 
-    # Crear curso nuevo
     with st.expander("➕ Crear Nuevo Curso"):
         nombre_nuevo = st.text_input("Nombre:")
         if st.button("Crear") and nombre_nuevo:
@@ -152,33 +182,26 @@ elif st.session_state.pagina_actual == "Mis Cursos":
 
     if curso_actual:
         st.write("---")
-        
-        # Obtener datos principales
         df_curso = st.session_state.datos_cursos[curso_actual]
         
-        # SINCRONIZACIÓN: Asegurar que la tabla de décimas tenga las mismas filas que la de notas
+        # SINCRONIZACIÓN DÉCIMAS
         if curso_actual not in st.session_state.datos_decimas:
-             st.session_state.datos_decimas[curso_actual] = pd.DataFrame(index=df_curso.index, columns=["Décimas"])
-             st.session_state.datos_decimas[curso_actual]["Décimas"] = 0 # Inicializar en 0
+             st.session_state.datos_decimas[curso_actual] = pd.DataFrame(index=df_curso.index, columns=["Décimas"]).fillna(0)
         
         df_decimas = st.session_state.datos_decimas[curso_actual]
         
-        # Si se agregaron alumnos nuevos, ajustar el tamaño de la tabla de décimas
         if len(df_curso) > len(df_decimas):
             filas_faltantes = len(df_curso) - len(df_decimas)
             nuevas_filas = pd.DataFrame({"Décimas": [0]*filas_faltantes})
             df_decimas = pd.concat([df_decimas, nuevas_filas], ignore_index=True)
         elif len(df_curso) < len(df_decimas):
-             # Si se borraron alumnos, cortar la tabla de décimas
              df_decimas = df_decimas.iloc[:len(df_curso)]
         
-        # --- INTERFAZ DE DOS COLUMNAS ---
+        # --- INTERFAZ ---
         col_notas, col_decimas = st.columns([3, 1])
         
         with col_notas:
             st.subheader(f"Planilla: {curso_actual}")
-            
-            # Botones de gestión
             c_up, c_add = st.columns([2,1])
             with c_up:
                 uploaded_file = st.file_uploader("Cargar CSV", type=["csv"], label_visibility="collapsed")
@@ -197,7 +220,6 @@ elif st.session_state.pagina_actual == "Mis Cursos":
                     st.rerun()
                 except: pass
 
-            # Configuración Editor Notas
             column_cfg = {"Nombre": st.column_config.TextColumn(disabled=False, width="medium")}
             for col in df_curso.columns:
                 if "Nota" in col:
@@ -214,25 +236,23 @@ elif st.session_state.pagina_actual == "Mis Cursos":
 
         with col_decimas:
             st.subheader("Décimas")
-            st.write("") # Espacio para alinear visualmente
             st.write("") 
             st.write("") 
             st.write("") 
             
-            # Editor de Décimas (Solo columna numérica con botones +/-)
             df_dec_editado = st.data_editor(
                 df_decimas,
                 column_config={
                     "Décimas": st.column_config.NumberColumn(
                         label="Ganadas",
-                        step=1, # Esto crea los botones +/-
+                        step=1,
                         min_value=0,
                         max_value=50,
                         format="%d 🌟"
                     )
                 },
                 use_container_width=True,
-                num_rows="fixed", # Fijo para que dependa de la tabla izquierda
+                num_rows="fixed",
                 key=f"editor_dec_{curso_actual}"
             )
             st.session_state.datos_decimas[curso_actual] = df_dec_editado
@@ -240,27 +260,20 @@ elif st.session_state.pagina_actual == "Mis Cursos":
         # --- CÁLCULO FINAL ---
         st.write("---")
         if not df_editado.empty:
-            # Unimos visualmente para el cálculo
             df_final = df_editado.copy()
             cols_notas = [c for c in df_final.columns if "Nota" in c]
             
-            # Convertir a numérico
             for c in cols_notas:
                 df_final[c] = pd.to_numeric(df_final[c], errors='coerce')
             
-            # Promedio Notas
             df_final['Prom. Notas'] = df_final[cols_notas].replace(0, pd.NA).mean(axis=1).round(1)
             
-            # Traer décimas
             decimas_lista = df_dec_editado['Décimas'].tolist()
-            # Asegurar longitudes iguales por seguridad
             if len(decimas_lista) < len(df_final):
                 decimas_lista += [0] * (len(df_final) - len(decimas_lista))
             
             df_final['Décimas'] = decimas_lista
-            
-            # Promedio Final (Ejemplo: 10 decimas = 1 punto, ajusta a tu gusto)
-            # Si quieres que sea directo (1 decima = 0.1), multiplicamos por 0.1
+            # CALCULO: Promedio + (Decimas * 0.1)
             df_final['Prom. Final'] = df_final['Prom. Notas'] + (df_final['Décimas'] * 0.1)
             
             def style_red(val):
@@ -345,24 +358,21 @@ elif st.session_state.pagina_actual == "Configuración":
         "tesis": st.session_state.tesis_papers,
         "tema": st.session_state.tema
     }
-    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v5.json", mime="application/json")
+    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v6_pudu.json", mime="application/json")
     
     archivo = st.file_uploader("⬆️ Cargar Respaldo", type="json")
     if archivo:
         try:
             data = json.load(archivo)
-            # Restaurar Cursos
             if "cursos" in data:
                 nuevos_cursos = {}
                 for k, v in data["cursos"].items():
                     df = pd.read_json(v)
-                    # Convertir notas a numeros
                     for col in df.columns:
                         if "Nota" in col: df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
                     nuevos_cursos[k] = df
                 st.session_state.datos_cursos = nuevos_cursos
 
-            # Restaurar Décimas (Nueva lógica)
             if "decimas_data" in data:
                 nuevas_decimas = {}
                 for k, v in data["decimas_data"].items():
