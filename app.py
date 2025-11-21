@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import json
-import streamlit.components.v1 as components
-import os # Necesario para verificar si existe la imagen
+import os
+from datetime import date
 
 # ==========================================
-# 1. CONFIGURACIÓN Y ESTILOS (TEMAS CORREGIDOS)
+# 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
 st.set_page_config(page_title="Planner Docente V10", layout="wide", page_icon="🦌")
 
@@ -15,7 +15,6 @@ def aplicar_estilos():
     if tema == 'Hacker (Matrix)':
         st.markdown("""
         <style>
-        /* === TEMA HACKER (Se mantiene igual) === */
         .stApp { background-color: #000000; color: #00ff41; font-family: 'Courier New', monospace; }
         div[data-testid="stMarkdownContainer"] p, h1, h2, h3, h4, span, label { color: #00ff41 !important; }
         .stButton>button { background-color: #0d0208; color: #00ff41; border: 1px solid #00ff41; }
@@ -28,37 +27,17 @@ def aplicar_estilos():
     elif tema == 'Pastel':
         st.markdown("""
         <style>
-        /* === TEMA PASTEL (Corregido) === */
         .stApp { background-color: #fffaf0; color: #5c5c5c; }
         h1, h2, h3, h4, p, label, span { color: #5c5c5c !important; }
-        
-        /* Menú lateral lavanda */
         section[data-testid="stSidebar"] > div { background-color: #e6e6fa !important; }
         section[data-testid="stSidebar"] { background-color: #e6e6fa !important; }
-        /* Asegurar que el texto del menú lateral sea oscuro */
         section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] span { color: #5c5c5c !important; }
-
-        /* Botones y Expanders */
         .stButton>button { background-color: #ffd1dc; color: black; border-radius: 15px; border: none; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);}
         div[data-testid="stExpander"] { background-color: #fff5f8; border-radius: 10px; border: 1px solid #f0dae0; }
-
-        /* --- CORRECCIÓN DE ELEMENTOS OSCUROS --- */
-        div[data-baseweb="select"] > div, input, textarea {
-            background-color: #fff0f5 !important;
-            color: #5c5c5c !important;
-            border-color: #dcd0ff !important;
-        }
+        div[data-baseweb="select"] > div, input, textarea { background-color: #fff0f5 !important; color: #5c5c5c !important; border-color: #dcd0ff !important; }
         div[data-baseweb="select"] span { color: #5c5c5c !important; }
-
-        div[data-testid="stFileUploader"] section {
-            background-color: #f3eaff !important;
-            border: 1px dashed #dcd0ff;
-        }
-        div[data-testid="stFileUploader"] button {
-             background-color: #dcd0ff !important;
-             color: #5c5c5c !important;
-             border: none;
-        }
+        div[data-testid="stFileUploader"] section { background-color: #f3eaff !important; border: 1px dashed #dcd0ff; }
+        div[data-testid="stFileUploader"] button { background-color: #dcd0ff !important; color: #5c5c5c !important; border: none; }
         div[data-testid="stFileUploader"] svg { color: #9370db !important; }
         </style>
         """, unsafe_allow_html=True)
@@ -66,42 +45,22 @@ def aplicar_estilos():
     elif tema == 'Claro (Oficina)':
         st.markdown("""
         <style>
-        /* === TEMA CLARO OFICINA (Corregido) === */
         .stApp { background-color: #ffffff; color: #31333F; }
         h1, h2, h3, h4, p, label, span { color: #31333F !important; }
-        
-        /* Menú lateral gris claro */
         section[data-testid="stSidebar"] > div { background-color: #f8f9fa !important; }
         section[data-testid="stSidebar"] { background-color: #f8f9fa !important; border-right: 1px solid #dee2e6;}
-        
-        /* Forzamos texto oscuro en el sidebar */
-        section[data-testid="stSidebar"] label, 
-        section[data-testid="stSidebar"] span,
-        section[data-testid="stSidebar"] p { 
-            color: #31333F !important; 
-        }
-        
-        div[data-baseweb="select"] > div, input, textarea {
-            background-color: #ffffff !important;
-            color: #31333F !important;
-            border-color: #cccccc !important;
-        }
+        section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] p { color: #31333F !important; }
+        div[data-baseweb="select"] > div, input, textarea { background-color: #ffffff !important; color: #31333F !important; border-color: #cccccc !important; }
         </style>
         """, unsafe_allow_html=True)
 
-# FUNCIÓN DEL NUEVO PUDÚ (IMAGEN PNG)
 def mostrar_pudu():
-    # Nombre del archivo que guardaste
     nombre_imagen = "scout.png"
-    
-    # Verificamos si la imagen existe en la carpeta antes de mostrarla
     if os.path.exists(nombre_imagen):
-        # Mostramos la imagen centrada en la barra lateral
         st.sidebar.image(nombre_imagen, use_container_width=True)
     else:
-        # Si no la encuentra (útil para debugging), muestra un aviso
-        st.sidebar.warning(f"⚠️ No encuentro '{nombre_imagen}'. Asegúrate de subirla a GitHub en la misma carpeta que app.py")
-        st.sidebar.markdown("---") # Separador
+        st.sidebar.warning(f"⚠️ No encuentro '{nombre_imagen}' en GitHub/Carpeta.")
+        st.sidebar.markdown("---")
 
 # ==========================================
 # 2. INICIALIZACIÓN DE DATOS
@@ -110,8 +69,6 @@ if 'datos_cursos' not in st.session_state:
     st.session_state.datos_cursos = {
         "7mo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
         "8vo Básico": pd.DataFrame(columns=["Nombre", "Nota 1"]),
-        "Computación": pd.DataFrame(columns=["Nombre", "Nota 1"]),
-        "Electivo Programación": pd.DataFrame(columns=["Nombre", "Nota 1"])
     }
 
 if 'datos_decimas' not in st.session_state:
@@ -136,7 +93,6 @@ aplicar_estilos()
 # ==========================================
 with st.sidebar:
     st.title("Sistema Docente")
-    # AQUI SE MUESTRA LA IMAGEN DEL PUDÚ TRIBAL
     mostrar_pudu()
     
     seleccion = st.radio(
@@ -157,34 +113,26 @@ with st.sidebar:
 if st.session_state.pagina_actual == "Inicio":
     st.title(f"👋 Bienvenido, Profesor")
     st.markdown("### Tu centro de comando personal.")
-    st.write("Selecciona una opción rápida para comenzar:")
-    
     st.write("---")
     
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         st.info("🎓 **Mis Cursos**")
-        st.write("Notas y Décimas en una sola vista.")
         if st.button("Ir a Cursos", use_container_width=True):
             st.session_state.pagina_actual = "Mis Cursos"
             st.rerun()
-            
     with col2:
         st.warning("📅 **Agenda**")
-        st.write("Planificador semanal sin fines de semana.")
         if st.button("Ir a Planificación", use_container_width=True):
             st.session_state.pagina_actual = "Planificación"
             st.rerun()
-            
     with col3:
         st.success("📚 **Tesis**")
-        st.write("Bitácora y resúmenes de papers.")
         if st.button("Ir a Tesis", use_container_width=True):
             st.session_state.pagina_actual = "Tesis"
             st.rerun()
 
-# --- MIS CURSOS ---
+# --- MIS CURSOS (SIMPLIFICADO Y ROBUSTO) ---
 elif st.session_state.pagina_actual == "Mis Cursos":
     st.title("📂 Gestión de Cursos")
     
@@ -227,7 +175,7 @@ elif st.session_state.pagina_actual == "Mis Cursos":
         elif len(df_curso) < len(df_decimas):
              df_decimas = df_decimas.iloc[:len(df_curso)]
         
-# --- INTERFAZ ---
+        # --- INTERFAZ ---
         col_notas, col_decimas = st.columns([3, 1])
         
         with col_notas:
@@ -241,42 +189,29 @@ elif st.session_state.pagina_actual == "Mis Cursos":
                     df_curso[f"Nota {nuevo_num}"] = 0.0
                     st.rerun()
 
-            # --- LÓGICA CSV CORREGIDA ---
             if uploaded_file:
                 try:
-                    # Intentamos leer. Si usas Excel en español, a veces el separador es ";"
-                    # Aquí forzamos la lectura básica, si falla te dirá por qué.
                     df_nuevo = pd.read_csv(uploaded_file)
-                    
                     # Normalización de nombres
                     if "Nombre" not in df_nuevo.columns and "Estudiante" in df_nuevo.columns:
                         df_nuevo.rename(columns={"Estudiante": "Nombre"}, inplace=True)
                     
-                    # Forzar que las columnas de notas sean números desde el inicio
+                    # Limpieza de comas decimales
                     for col in df_nuevo.columns:
-                        if "Nota" in col:
-                            # Reemplazar comas por puntos si vienen así del CSV
-                            if df_nuevo[col].dtype == object:
-                                df_nuevo[col] = df_nuevo[col].astype(str).str.replace(',', '.')
-                            df_nuevo[col] = pd.to_numeric(df_nuevo[col], errors='coerce').fillna(0.0)
+                        if "Nota" in col and df_nuevo[col].dtype == object:
+                            df_nuevo[col] = df_nuevo[col].astype(str).str.replace(',', '.')
 
                     st.session_state.datos_cursos[curso_actual] = df_nuevo
-                    st.success("¡Importación exitosa!")
+                    st.success("Importado correctamente")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Error al leer el CSV: {e}")
+                    st.error(f"Error CSV: {e}")
 
-            # Configuración de columnas para forzar números
+            # Configuración Flexible (Permite texto y números)
             column_cfg = {"Nombre": st.column_config.TextColumn(disabled=False, width="medium")}
             for col in df_curso.columns:
                 if "Nota" in col:
-                    column_cfg[col] = st.column_config.NumberColumn(
-                        min_value=1.0, 
-                        max_value=7.0, 
-                        step=0.1, 
-                        format="%.1f",
-                        required=True # Evita nulos
-                    )
+                    column_cfg[col] = st.column_config.NumberColumn(min_value=1.0, max_value=7.0, step=0.1, format="%.1f")
 
             df_editado = st.data_editor(
                 df_curso,
@@ -296,13 +231,7 @@ elif st.session_state.pagina_actual == "Mis Cursos":
             df_dec_editado = st.data_editor(
                 df_decimas,
                 column_config={
-                    "Décimas": st.column_config.NumberColumn(
-                        label="Ganadas",
-                        step=1,
-                        min_value=0,
-                        max_value=50,
-                        format="%d 🌟"
-                    )
+                    "Décimas": st.column_config.NumberColumn(label="Ganadas", step=1, min_value=0, max_value=50, format="%d 🌟")
                 },
                 use_container_width=True,
                 num_rows="fixed",
@@ -310,61 +239,25 @@ elif st.session_state.pagina_actual == "Mis Cursos":
             )
             st.session_state.datos_decimas[curso_actual] = df_dec_editado
 
-        # --- CÁLCULO FINAL BLINDADO (Adiós TypeError) ---
-        st.write("---")
-        st.subheader("📊 Resultados Finales") # Le puse título para que se entienda qué es la tabla de abajo
-
-        if not df_editado.empty:
-            df_final = df_editado.copy()
-            cols_notas = [c for c in df_final.columns if "Nota" in c]
-            
-            # 1. LIMPIEZA PROFUNDA ANTES DE CALCULAR
-            for c in cols_notas:
-                # Si por alguna razón es texto u objeto, lo forzamos a string y cambiamos comas por puntos
-                if df_final[c].dtype == 'object':
-                   df_final[c] = df_final[c].astype(str).str.replace(',', '.')
-                
-                # Convertimos a número. Lo que no sea número se vuelve NaN (Not a Number) y luego 0.0
-                df_final[c] = pd.to_numeric(df_final[c], errors='coerce').fillna(0.0)
-            
-            # 2. AHORA SI EL CÁLCULO (Sin ceros para el promedio)
-            # Reemplazamos 0.0 por NaN solo para el promedio (para que no baje la nota si no ha rendido la prueba)
-            df_final['Prom. Notas'] = df_final[cols_notas].replace(0.0, pd.NA).mean(axis=1).round(1).fillna(0.0)
-            
-            # 3. DÉCIMAS
-            decimas_lista = df_dec_editado['Décimas'].tolist()
-            # Ajuste de largo por si agregaste alumnos
-            if len(decimas_lista) < len(df_final):
-                decimas_lista += [0] * (len(df_final) - len(decimas_lista))
-            elif len(decimas_lista) > len(df_final):
-                 decimas_lista = decimas_lista[:len(df_final)]
-            
-            df_final['Décimas'] = decimas_lista
-            df_final['Prom. Final'] = df_final['Prom. Notas'] + (df_final['Décimas'] * 0.1)
-            
-            # Función de estilo
-            def style_red(val):
-                if pd.isna(val): return ''
-                return 'color: #ff4b4b' if val < 4.0 else 'color: #00ff41' # Verde si aprueba, rojo si reprueba
-
-            # Mostramos la tabla final limpia
-            st.dataframe(
-                df_final[['Nombre', 'Prom. Notas', 'Décimas', 'Prom. Final']].style.applymap(style_red, subset=['Prom. Final']), 
-                use_container_width=True
-            )
-# --- PLANIFICACIÓN ---
+# --- PLANIFICACIÓN (AHORA CON FECHAS) ---
 elif st.session_state.pagina_actual == "Planificación":
-    st.title("📅 Planificador")
+    st.title("📅 Agenda Docente")
     
     c1, c2 = st.columns([1, 2])
     with c1:
-        st.subheader("Agendar")
-        dia = st.selectbox("Día", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"])
+        st.subheader("Agendar Nuevo")
+        # CALENDARIO REAL
+        fecha_obj = st.date_input("Selecciona Fecha", value=date.today())
         act = st.text_input("Actividad")
-        tag = st.selectbox("Etiqueta", ["Clase", "Reunión", "Tesis", "Personal"])
+        tag = st.selectbox("Etiqueta", ["Clase", "Reunión", "Tesis", "Personal", "Urgente"])
+        
         if st.button("Guardar Evento") and act:
-            st.session_state.planificacion.append({"dia": dia, "titulo": act, "tipo": tag})
-            st.success("Guardado")
+            st.session_state.planificacion.append({
+                "fecha": str(fecha_obj), 
+                "titulo": act, 
+                "tipo": tag
+            })
+            st.success("Evento agendado")
             st.rerun()
             
         if st.button("Limpiar Todo"):
@@ -372,16 +265,31 @@ elif st.session_state.pagina_actual == "Planificación":
             st.rerun()
             
     with c2:
-        st.subheader("Semana")
-        for d in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]:
-            with st.expander(d, expanded=True):
-                eventos = [e for e in st.session_state.planificacion if e['dia'] == d]
-                for i, e in enumerate(eventos):
+        st.subheader("Próximos Eventos")
+        if not st.session_state.planificacion:
+            st.info("No tienes eventos pendientes.")
+        else:
+            # Convertimos a DataFrame para ordenar por fecha
+            df_plan = pd.DataFrame(st.session_state.planificacion)
+            # Manejo de datos antiguos sin fecha
+            if "fecha" not in df_plan.columns:
+                df_plan["fecha"] = str(date.today())
+            
+            df_plan = df_plan.sort_values("fecha")
+            
+            for index, row in df_plan.iterrows():
+                emoji = "📌"
+                if row['tipo'] == "Tesis": emoji = "🎓"
+                if row['tipo'] == "Urgente": emoji = "🔥"
+                
+                with st.expander(f"{row['fecha']} | {emoji} {row['titulo']}"):
                     col_a, col_b = st.columns([4, 1])
-                    col_a.markdown(f"**[{e['tipo']}]** {e['titulo']}")
-                    if col_b.button("X", key=f"del_{d}_{i}"):
-                        st.session_state.planificacion.remove(e)
-                        st.rerun()
+                    col_a.markdown(f"**Tipo:** {row['tipo']}")
+                    if col_b.button("Borrar", key=f"del_plan_{index}"):
+                        item = {"fecha": row['fecha'], "titulo": row['titulo'], "tipo": row['tipo']}
+                        if item in st.session_state.planificacion:
+                            st.session_state.planificacion.remove(item)
+                            st.rerun()
 
 # --- TESIS ---
 elif st.session_state.pagina_actual == "Tesis":
@@ -412,7 +320,7 @@ elif st.session_state.pagina_actual == "Configuración":
     
     st.subheader("🎨 Tema Visual")
     tema_nuevo = st.selectbox("Elige tema:", ["Hacker (Matrix)", "Pastel", "Claro (Oficina)"], 
-                             index=["Hacker (Matrix)", "Pastel", "Claro (Oficina)"].index(st.session_state.tema))
+                              index=["Hacker (Matrix)", "Pastel", "Claro (Oficina)"].index(st.session_state.tema))
     
     if tema_nuevo != st.session_state.tema:
         st.session_state.tema = tema_nuevo
@@ -438,8 +346,10 @@ elif st.session_state.pagina_actual == "Configuración":
                 nuevos_cursos = {}
                 for k, v in data["cursos"].items():
                     df = pd.read_json(v)
+                    # Limpieza al cargar respaldo
                     for col in df.columns:
-                        if "Nota" in col: df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+                        if "Nota" in col: 
+                            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
                     nuevos_cursos[k] = df
                 st.session_state.datos_cursos = nuevos_cursos
 
