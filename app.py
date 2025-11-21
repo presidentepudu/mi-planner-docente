@@ -97,7 +97,7 @@ aplicar_estilos()
 # 3. BARRA LATERAL
 # ==========================================
 with st.sidebar:
-    st.title("Sistema Docente")
+    st.title("Menú")
     mostrar_pudu()
     
     seleccion = st.radio(
@@ -116,8 +116,8 @@ with st.sidebar:
 
 # --- INICIO ---
 if st.session_state.pagina_actual == "Inicio":
-    st.title(f"👋 Bienvenido, Profesor")
-    st.markdown("### Tu centro de comando personal.")
+    st.title(f"👋 Bienvenido!")
+    st.markdown("### Tu centro de planificación personal. Solo si te gustan los pudús obviamente")
     st.write("---")
     
     col1, col2, col3 = st.columns(3)
@@ -246,7 +246,7 @@ elif st.session_state.pagina_actual == "Mis Cursos":
 
 # --- PLANIFICACIÓN ---
 elif st.session_state.pagina_actual == "Planificación":
-    st.title("📅 Agenda Docente")
+    st.title("📅 Calendario")
     
     c1, c2 = st.columns([1, 2])
     with c1:
@@ -431,3 +431,4 @@ elif st.session_state.pagina_actual == "Configuración":
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
+
