@@ -7,7 +7,7 @@ from datetime import date
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS
 # ==========================================
-st.set_page_config(page_title="Planner Docente V10", layout="wide", page_icon="🦌")
+st.set_page_config(page_title="Planner Docente V11", layout="wide", page_icon="🦌")
 
 def aplicar_estilos():
     tema = st.session_state.get('tema', 'Hacker (Matrix)')
@@ -21,6 +21,7 @@ def aplicar_estilos():
         section[data-testid="stSidebar"] { background-color: #0a0a0a !important; border-right: 1px solid #00ff41; }
         input, textarea, select, div[data-baseweb="select"] > div { background-color: #111 !important; color: #00ff41 !important; border-color: #00ff41 !important; }
         div[data-testid="stExpander"] { background-color: #0a0a0a; border: 1px solid #00ff41; }
+        div[data-testid="stTabs"] button { color: #00ff41 !important; } 
         </style>
         """, unsafe_allow_html=True)
         
@@ -77,8 +78,12 @@ if 'datos_decimas' not in st.session_state:
 if 'planificacion' not in st.session_state:
     st.session_state.planificacion = []
 
+# --- NUEVAS LISTAS PARA LA TESIS ---
 if 'tesis_papers' not in st.session_state:
-    st.session_state.tesis_papers = []
+    st.session_state.tesis_papers = [] # Aquí van los papers
+
+if 'tesis_tareas' not in st.session_state:
+    st.session_state.tesis_tareas = [] # Aquí van las notas/tareas
 
 if 'tema' not in st.session_state:
     st.session_state.tema = 'Hacker (Matrix)'
@@ -207,7 +212,7 @@ elif st.session_state.pagina_actual == "Mis Cursos":
                 except Exception as e:
                     st.error(f"Error CSV: {e}")
 
-            # Configuración Flexible (Permite texto y números)
+            # Configuración Flexible
             column_cfg = {"Nombre": st.column_config.TextColumn(disabled=False, width="medium")}
             for col in df_curso.columns:
                 if "Nota" in col:
@@ -239,14 +244,13 @@ elif st.session_state.pagina_actual == "Mis Cursos":
             )
             st.session_state.datos_decimas[curso_actual] = df_dec_editado
 
-# --- PLANIFICACIÓN (AHORA CON FECHAS) ---
+# --- PLANIFICACIÓN ---
 elif st.session_state.pagina_actual == "Planificación":
     st.title("📅 Agenda Docente")
     
     c1, c2 = st.columns([1, 2])
     with c1:
         st.subheader("Agendar Nuevo")
-        # CALENDARIO REAL
         fecha_obj = st.date_input("Selecciona Fecha", value=date.today())
         act = st.text_input("Actividad")
         tag = st.selectbox("Etiqueta", ["Clase", "Reunión", "Tesis", "Personal", "Urgente"])
@@ -269,9 +273,7 @@ elif st.session_state.pagina_actual == "Planificación":
         if not st.session_state.planificacion:
             st.info("No tienes eventos pendientes.")
         else:
-            # Convertimos a DataFrame para ordenar por fecha
             df_plan = pd.DataFrame(st.session_state.planificacion)
-            # Manejo de datos antiguos sin fecha
             if "fecha" not in df_plan.columns:
                 df_plan["fecha"] = str(date.today())
             
@@ -291,28 +293,83 @@ elif st.session_state.pagina_actual == "Planificación":
                             st.session_state.planificacion.remove(item)
                             st.rerun()
 
-# --- TESIS ---
+# --- TESIS (AHORA CON DOS PESTAÑAS) ---
 elif st.session_state.pagina_actual == "Tesis":
-    st.title("🎓 Tesis & Papers")
+    st.title("🎓 Tesis & Avances")
     
-    st.markdown("### 📝 Nuevo Registro")
-    tit = st.text_input("Título Paper / Tarea")
-    res = st.text_area("Resumen")
-    if st.button("Guardar Paper"):
-        st.session_state.tesis_papers.append({"titulo": tit, "resumen": res, "leido": False})
-        st.rerun()
+    # CREAMOS LAS DOS PESTAÑAS
+    tab_tareas, tab_papers = st.tabs(["📝 Bitácora y Tareas", "📚 Bibliografía (Papers)"])
+
+    # --- PESTAÑA 1: TAREAS Y NOTAS ---
+    with tab_tareas:
+        st.subheader("Lista de Pendientes")
+        c_t1, c_t2 = st.columns([3, 1])
+        with c_t1:
+            nueva_tarea = st.text_input("Nueva tarea o nota rápida:", placeholder="Ej: Corregir introducción, enviar correo...")
+        with c_t2:
+            st.write("")
+            st.write("")
+            if st.button("Agregar Tarea") and nueva_tarea:
+                st.session_state.tesis_tareas.append({"tarea": nueva_tarea, "hecho": False})
+                st.rerun()
         
-    st.write("---")
-    for i, p in enumerate(st.session_state.tesis_papers):
-        icon = "✅" if p['leido'] else "⏳"
-        with st.expander(f"{icon} {p['titulo']}"):
-            st.write(p['resumen'])
-            if st.checkbox("Marcar Leído", value=p['leido'], key=f"p_{i}"):
-                st.session_state.tesis_papers[i]['leido'] = True
+        st.write("---")
+        if not st.session_state.tesis_tareas:
+            st.info("No hay tareas pendientes. ¡A avanzar!")
+        else:
+            for i, t in enumerate(st.session_state.tesis_tareas):
+                col_check, col_txt, col_del = st.columns([0.5, 4, 1])
+                
+                # Checkbox para marcar como hecho
+                is_done = col_check.checkbox("", value=t['hecho'], key=f"chk_tarea_{i}")
+                if is_done != t['hecho']:
+                    st.session_state.tesis_tareas[i]['hecho'] = is_done
+                    st.rerun()
+                
+                # Texto tachado si está listo
+                if t['hecho']:
+                    col_txt.markdown(f"~~{t['tarea']}~~")
+                else:
+                    col_txt.markdown(t['tarea'])
+                
+                if col_del.button("🗑️", key=f"del_tarea_{i}"):
+                    st.session_state.tesis_tareas.pop(i)
+                    st.rerun()
+
+    # --- PESTAÑA 2: PAPERS ---
+    with tab_papers:
+        st.subheader("Registro de Lecturas")
+        with st.expander("➕ Agregar Nuevo Paper", expanded=False):
+            tit = st.text_input("Título del Paper")
+            res = st.text_area("Tus notas / Resumen personal")
+            if st.button("Guardar Paper"):
+                st.session_state.tesis_papers.append({"titulo": tit, "resumen": res, "leido": False})
                 st.rerun()
-            if st.button("Borrar", key=f"del_p_{i}"):
-                st.session_state.tesis_papers.pop(i)
-                st.rerun()
+            
+        st.write("---")
+        if not st.session_state.tesis_papers:
+            st.info("Aún no has agregado papers.")
+        
+        for i, p in enumerate(st.session_state.tesis_papers):
+            # Icono dinámico
+            estado = "✅ LEÍDO" if p['leido'] else "⏳ POR LEER"
+            color_estado = "green" if p['leido'] else "orange"
+            
+            with st.expander(f"📄 {p['titulo']}  [{estado}]"):
+                st.markdown(f"**Resumen:**")
+                st.write(p['resumen'])
+                
+                c_p1, c_p2 = st.columns([1, 1])
+                with c_p1:
+                    # Checkbox para marcar leído
+                    leido = st.checkbox("Marcar como Leído", value=p['leido'], key=f"paper_check_{i}")
+                    if leido != p['leido']:
+                        st.session_state.tesis_papers[i]['leido'] = leido
+                        st.rerun()
+                with c_p2:
+                    if st.button("Borrar Paper", key=f"del_paper_{i}"):
+                        st.session_state.tesis_papers.pop(i)
+                        st.rerun()
 
 # --- CONFIGURACIÓN ---
 elif st.session_state.pagina_actual == "Configuración":
@@ -333,10 +390,11 @@ elif st.session_state.pagina_actual == "Configuración":
         "cursos": {k: v.to_json() for k, v in st.session_state.datos_cursos.items()},
         "decimas_data": {k: v.to_json() for k, v in st.session_state.datos_decimas.items()},
         "planificacion": st.session_state.planificacion,
-        "tesis": st.session_state.tesis_papers,
+        "tesis_papers": st.session_state.tesis_papers, # Lista de papers
+        "tesis_tareas": st.session_state.tesis_tareas, # Nueva lista de tareas
         "tema": st.session_state.tema
     }
-    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v10_final.json", mime="application/json")
+    st.download_button("⬇️ Descargar Respaldo JSON", data=json.dumps(datos_exportar), file_name="respaldo_v11_tesis.json", mime="application/json")
     
     archivo = st.file_uploader("⬆️ Cargar Respaldo", type="json")
     if archivo:
@@ -346,7 +404,6 @@ elif st.session_state.pagina_actual == "Configuración":
                 nuevos_cursos = {}
                 for k, v in data["cursos"].items():
                     df = pd.read_json(v)
-                    # Limpieza al cargar respaldo
                     for col in df.columns:
                         if "Nota" in col: 
                             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
@@ -360,12 +417,17 @@ elif st.session_state.pagina_actual == "Configuración":
                 st.session_state.datos_decimas = nuevas_decimas
             
             if "planificacion" in data: st.session_state.planificacion = data["planificacion"]
-            if "tesis" in data: st.session_state.tesis_papers = data["tesis"]
+            
+            # Carga inteligente de tesis (por si el respaldo es antiguo)
+            if "tesis_papers" in data: 
+                st.session_state.tesis_papers = data["tesis_papers"]
+            elif "tesis" in data: # Compatibilidad con versiones viejas
+                 st.session_state.tesis_papers = data["tesis"]
+
+            if "tesis_tareas" in data: st.session_state.tesis_tareas = data["tesis_tareas"]
             if "tema" in data: st.session_state.tema = data["tema"]
             
-            st.success("¡Sistema restaurado!")
+            st.success("¡Sistema restaurado y actualizado!")
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
-
-
