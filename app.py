@@ -92,7 +92,7 @@ def aplicar_estilos():
 # FUNCIÓN DEL NUEVO PUDÚ (IMAGEN PNG)
 def mostrar_pudu():
     # Nombre del archivo que guardaste
-    nombre_imagen = "pudu_tribal.png"
+    nombre_imagen = "scout.png"
     
     # Verificamos si la imagen existe en la carpeta antes de mostrarla
     if os.path.exists(nombre_imagen):
@@ -416,3 +416,4 @@ elif st.session_state.pagina_actual == "Configuración":
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
+
