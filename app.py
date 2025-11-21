@@ -227,7 +227,7 @@ elif st.session_state.pagina_actual == "Mis Cursos":
         elif len(df_curso) < len(df_decimas):
              df_decimas = df_decimas.iloc[:len(df_curso)]
         
-        # --- INTERFAZ ---
+# --- INTERFAZ ---
         col_notas, col_decimas = st.columns([3, 1])
         
         with col_notas:
@@ -241,19 +241,42 @@ elif st.session_state.pagina_actual == "Mis Cursos":
                     df_curso[f"Nota {nuevo_num}"] = 0.0
                     st.rerun()
 
+            # --- LÓGICA CSV CORREGIDA ---
             if uploaded_file:
                 try:
+                    # Intentamos leer. Si usas Excel en español, a veces el separador es ";"
+                    # Aquí forzamos la lectura básica, si falla te dirá por qué.
                     df_nuevo = pd.read_csv(uploaded_file)
+                    
+                    # Normalización de nombres
                     if "Nombre" not in df_nuevo.columns and "Estudiante" in df_nuevo.columns:
                         df_nuevo.rename(columns={"Estudiante": "Nombre"}, inplace=True)
-                    st.session_state.datos_cursos[curso_actual] = df_nuevo
-                    st.rerun()
-                except: pass
+                    
+                    # Forzar que las columnas de notas sean números desde el inicio
+                    for col in df_nuevo.columns:
+                        if "Nota" in col:
+                            # Reemplazar comas por puntos si vienen así del CSV
+                            if df_nuevo[col].dtype == object:
+                                df_nuevo[col] = df_nuevo[col].astype(str).str.replace(',', '.')
+                            df_nuevo[col] = pd.to_numeric(df_nuevo[col], errors='coerce').fillna(0.0)
 
+                    st.session_state.datos_cursos[curso_actual] = df_nuevo
+                    st.success("¡Importación exitosa!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error al leer el CSV: {e}")
+
+            # Configuración de columnas para forzar números
             column_cfg = {"Nombre": st.column_config.TextColumn(disabled=False, width="medium")}
             for col in df_curso.columns:
                 if "Nota" in col:
-                    column_cfg[col] = st.column_config.NumberColumn(min_value=1.0, max_value=7.0, step=0.1, format="%.1f")
+                    column_cfg[col] = st.column_config.NumberColumn(
+                        min_value=1.0, 
+                        max_value=7.0, 
+                        step=0.1, 
+                        format="%.1f",
+                        required=True # Evita nulos
+                    )
 
             df_editado = st.data_editor(
                 df_curso,
@@ -287,30 +310,48 @@ elif st.session_state.pagina_actual == "Mis Cursos":
             )
             st.session_state.datos_decimas[curso_actual] = df_dec_editado
 
-        # --- CÁLCULO FINAL ---
+        # --- CÁLCULO FINAL BLINDADO (Adiós TypeError) ---
         st.write("---")
+        st.subheader("📊 Resultados Finales") # Le puse título para que se entienda qué es la tabla de abajo
+
         if not df_editado.empty:
             df_final = df_editado.copy()
             cols_notas = [c for c in df_final.columns if "Nota" in c]
             
+            # 1. LIMPIEZA PROFUNDA ANTES DE CALCULAR
             for c in cols_notas:
-                df_final[c] = pd.to_numeric(df_final[c], errors='coerce')
+                # Si por alguna razón es texto u objeto, lo forzamos a string y cambiamos comas por puntos
+                if df_final[c].dtype == 'object':
+                   df_final[c] = df_final[c].astype(str).str.replace(',', '.')
+                
+                # Convertimos a número. Lo que no sea número se vuelve NaN (Not a Number) y luego 0.0
+                df_final[c] = pd.to_numeric(df_final[c], errors='coerce').fillna(0.0)
             
-            df_final['Prom. Notas'] = df_final[cols_notas].replace(0, pd.NA).mean(axis=1).round(1)
+            # 2. AHORA SI EL CÁLCULO (Sin ceros para el promedio)
+            # Reemplazamos 0.0 por NaN solo para el promedio (para que no baje la nota si no ha rendido la prueba)
+            df_final['Prom. Notas'] = df_final[cols_notas].replace(0.0, pd.NA).mean(axis=1).round(1).fillna(0.0)
             
+            # 3. DÉCIMAS
             decimas_lista = df_dec_editado['Décimas'].tolist()
+            # Ajuste de largo por si agregaste alumnos
             if len(decimas_lista) < len(df_final):
                 decimas_lista += [0] * (len(df_final) - len(decimas_lista))
+            elif len(decimas_lista) > len(df_final):
+                 decimas_lista = decimas_lista[:len(df_final)]
             
             df_final['Décimas'] = decimas_lista
             df_final['Prom. Final'] = df_final['Prom. Notas'] + (df_final['Décimas'] * 0.1)
             
+            # Función de estilo
             def style_red(val):
-                try: return 'color: #ff4b4b' if val < 4.0 else ''
-                except: return ''
-                
-            st.dataframe(df_final[['Nombre', 'Prom. Notas', 'Décimas', 'Prom. Final']].style.applymap(style_red, subset=['Prom. Final']), use_container_width=True)
+                if pd.isna(val): return ''
+                return 'color: #ff4b4b' if val < 4.0 else 'color: #00ff41' # Verde si aprueba, rojo si reprueba
 
+            # Mostramos la tabla final limpia
+            st.dataframe(
+                df_final[['Nombre', 'Prom. Notas', 'Décimas', 'Prom. Final']].style.applymap(style_red, subset=['Prom. Final']), 
+                use_container_width=True
+            )
 # --- PLANIFICACIÓN ---
 elif st.session_state.pagina_actual == "Planificación":
     st.title("📅 Planificador")
@@ -416,4 +457,5 @@ elif st.session_state.pagina_actual == "Configuración":
             st.rerun()
         except Exception as e:
             st.error(f"Error: {e}")
+
 
